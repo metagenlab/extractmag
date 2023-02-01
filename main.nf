@@ -11,13 +11,6 @@
 
 nextflow.enable.dsl = 2
 
-/*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    GENOME PARAMETER VALUES
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*/
-
-params.fasta = WorkflowMain.getGenomeAttribute(params, 'fasta')
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -26,6 +19,19 @@ params.fasta = WorkflowMain.getGenomeAttribute(params, 'fasta')
 */
 
 WorkflowMain.initialise(workflow, params, log)
+
+
+// Check if --input file is empty
+ch_input = file(params.input, checkIfExists: true)
+if (ch_input.isEmpty()) {exit 1, "File provided with --input is empty: ${ch_input.getName()}!"}
+
+// Read in ids from --input file
+Channel
+    .from(file(params.input, checkIfExists: true))
+    .splitCsv(header:true, sep:'\t', strip:true)
+    .map { it.accession }
+    .unique()
+    .set { ch_ids }
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -39,7 +45,8 @@ include { EXTRACTMAG } from './workflows/extractmag'
 // WORKFLOW: Run main nf-core/extractmag analysis pipeline
 //
 workflow NFCORE_EXTRACTMAG {
-    EXTRACTMAG ()
+    EXTRACTMAG (ch_ids)
+
 }
 
 /*

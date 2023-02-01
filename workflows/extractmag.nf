@@ -11,7 +11,7 @@ WorkflowExtractmag.initialise(params, log)
 
 // TODO nf-core: Add all file path parameters for the pipeline to the list below
 // Check input path parameters to see if they exist
-def checkPathParamList = [ params.input, params.multiqc_config, params.fasta ]
+def checkPathParamList = [ params.input, params.multiqc_config ]
 for (param in checkPathParamList) { if (param) { file(param, checkIfExists: true) } }
 
 // Check mandatory parameters
@@ -46,9 +46,29 @@ include { INPUT_CHECK } from '../subworkflows/local/input_check'
 //
 // MODULE: Installed directly from nf-core/modules
 //
-include { FASTQC                      } from '../modules/nf-core/modules/fastqc/main'
-include { MULTIQC                     } from '../modules/nf-core/modules/multiqc/main'
-include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/modules/custom/dumpsoftwareversions/main'
+include { FASTQC                       } from '../modules/nf-core/modules/fastqc/main'
+include { MULTIQC                      } from '../modules/nf-core/modules/multiqc/main'
+include { FASTQC as TRIM_FASTQC        } from '../modules/nf-core/modules/fastqc/main'  addParams( options: [:] )
+include { FASTP                        } from '../modules/nf-core/modules/fastp/main'  addParams( options: [:] )
+include { QUAST                        } from '../modules/nf-core/modules/quast/main'  addParams( options: [:] )
+include { CHECKM_LINEAGEWF             } from '../modules/nf-core/modules/checkm/lineagewf/main' addParams( options: [:] )
+include { CUSTOM_SRATOOLSNCBISETTINGS  } from '../modules/nf-core/modules/custom/sratoolsncbisettings/main'
+include { SRATOOLS_PREFETCH            } from '../modules/nf-core/modules/sratools/prefetch/main'
+include { SRATOOLS_FASTERQDUMP         } from '../modules/nf-core/modules/sratools/fasterqdump/main'
+include { SRA_IDS_TO_RUNINFO           } from '../modules/local/sra_ids_to_runinfo'
+include { SRA_RUNINFO_TO_FTP           } from '../modules/local/sra_runinfo_to_ftp'
+include { BLOOCOO                      } from '../modules/local/bloocoo'
+include { PIGZ                         } from '../modules/local/compress'
+include { GATBMINIA                    } from '../modules/local/gatb_minia'
+include { CAT as CAT_MEGAHIT           } from '../modules/local/cat_bat'
+include { CAT as CAT_MINIA             } from '../modules/local/cat_bat'
+include { MEGAHIT                      } from '../modules/nf-core/modules/megahit/main'
+include { SPADES                       } from '../modules/nf-core/modules/spades/main'
+include { FATOGFA                      } from '../modules/local/miniatogfa'
+include { MEGAHITFATOFASTG             } from '../modules/local/megahittofastg'
+include { FASTGTOGFA                   } from '../modules/local/bandage_fastg2gfa'
+include { GFA2FA as GFA2FA_MINIA       } from '../modules/local/gfa2fa'
+include { GFA2FA as GFA2FA_MEGAHIT     } from '../modules/local/gfa2fa'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -60,32 +80,141 @@ include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/modules/custom/
 def multiqc_report = []
 
 workflow EXTRACTMAG {
+    take:
+    sra_ids  // channel: [ val(meta), val(id) ]
+
+    main:
 
     ch_versions = Channel.empty()
+
+    sra_ids
+    .collect().view()
+
+    //
+    // MODULE: Get SRA run information for public database ids
+    //
+    SRA_IDS_TO_RUNINFO (
+        sra_ids,
+        params.ena_metadata_fields ?: ''
+    )
+    ch_versions = ch_versions.mix(SRA_IDS_TO_RUNINFO.out.versions.first())
+
+    //
+    // MODULE: Parse SRA run information, create file containing FTP links and read into workflow as [ meta, [reads] ]
+    //
+    SRA_RUNINFO_TO_FTP (
+        SRA_IDS_TO_RUNINFO.out.tsv
+    )
+    ch_versions = ch_versions.mix(SRA_RUNINFO_TO_FTP.out.versions.first())
+
+    SRA_RUNINFO_TO_FTP
+        .out
+        .tsv
+        .splitCsv(header:true, sep:'\t')
+        .map {
+            meta ->
+                meta.single_end = meta.single_end.toBoolean()
+                [ meta, [ meta.fastq_1, meta.fastq_2 ] ]
+        }
+        .unique()
+        .map { meta, reads -> [ meta, meta.run_accession ] }
+        .set { ch_sra_reads }
+
+    
 
     //
     // SUBWORKFLOW: Read in samplesheet, validate and stage input files
     //
-    INPUT_CHECK (
-        ch_input
-    )
-    ch_versions = ch_versions.mix(INPUT_CHECK.out.versions)
 
     //
-    // MODULE: Run FastQC
+    // configure SRA
+    //
+    CUSTOM_SRATOOLSNCBISETTINGS()
+    def settings = CUSTOM_SRATOOLSNCBISETTINGS.out.ncbi_settings
+    ch_versions = ch_versions.mix( CUSTOM_SRATOOLSNCBISETTINGS.out.versions )
+
+    //
+    // Download reads
+    //
+
+    SRATOOLS_PREFETCH ( ch_sra_reads, settings )
+    ch_versions = ch_versions.mix( SRATOOLS_PREFETCH.out.versions.first())
+
+    SRATOOLS_FASTERQDUMP ( SRATOOLS_PREFETCH.out.sra, settings )
+    ch_versions = ch_versions.mix( SRATOOLS_FASTERQDUMP.out.versions.first() )
+
+    //
+    // FastQC raw reads
     //
     FASTQC (
-        INPUT_CHECK.out.reads
+        SRATOOLS_FASTERQDUMP.out.reads // channel: [ val(meta), [ reads ] ]
     )
-    ch_versions = ch_versions.mix(FASTQC.out.versions.first())
 
-    CUSTOM_DUMPSOFTWAREVERSIONS (
-        ch_versions.unique().collectFile(name: 'collated_versions.yml')
-    )
+    /*
+     * Trim Reads
+     */
+    FASTP(SRATOOLS_FASTERQDUMP.out.reads, false, false)
+    ch_versions = ch_versions.mix(FASTP.out.versions.first().ifEmpty(null))
+
+    /*
+     * Run FastQC on trimmed reads
+     */
+    TRIM_FASTQC(FASTP.out.reads)
+    ch_versions = ch_versions.mix(TRIM_FASTQC.out.versions.first().ifEmpty(null))
+
+    /*
+     * READ CORRECTION
+     */
+    BLOOCOO(FASTP.out.reads)
+    ch_versions = ch_versions.mix(BLOOCOO.out.versions.first().ifEmpty(null))
+
+    PIGZ(BLOOCOO.out.reads)
+    ch_versions = ch_versions.mix(PIGZ.out.versions.first().ifEmpty(null))
+
+    /*
+     * ASSEMBLY
+     * - MINIA
+     * - MEGAHIT
+     * - SPADES
+     */
+    GATBMINIA(PIGZ.out.file_out)
+    ch_versions = ch_versions.mix(GATBMINIA.out.versions.first().ifEmpty(null))
+
+    MEGAHIT(PIGZ.out.file_out)
+    ch_versions = ch_versions.mix(MEGAHIT.out.versions.first().ifEmpty(null))
+
+    PIGZ.out.file_out.map { meta, reads -> [meta, reads, [], []] }
+        .set { ch_spades }
+
+    // SPADES(ch_spades, [])
+    // ch_versions = ch_versions.mix(SPADES.out.versions.first().ifEmpty(null))
+
+    /* convert fasta to gfa */
+    FATOGFA(GATBMINIA.out.contigs, GATBMINIA.out.final_k)
+    MEGAHITFATOFASTG(MEGAHIT.out.contigs, MEGAHIT.out.k_contigs)
+    FASTGTOGFA(MEGAHITFATOFASTG.out.fastg)
+
+    /* extract fa from gfa */
+    GFA2FA_MINIA(FATOGFA.out.gfa, "MINIA")
+    GFA2FA_MEGAHIT(FASTGTOGFA.out.gfa, "MEGAHIT")
+
+
+    /*
+     * contig taxnoomy with CAT
+     */
+    CAT_MEGAHIT(GFA2FA_MINIA.out.fasta, params.cat_db, params.cat_tax, "MEGAHIT")
+    CAT_MINIA(GFA2FA_MEGAHIT.out.fasta, params.cat_db, params.cat_tax, "MINIA")
+
+    // gtdb taxnonomy
+    // root;d__Bacteria;p__Actinobacteriota;c__Actinomycetia;o__Streptomycetales;f__Streptomycetaceae;g__Streptomyces;s__Streptomyces aureoverticillatus
+
+    // SPADES(BLOOCOO.out.reads,  [])
+    // ch_versions = ch_versions.mix(MEGAHIT.out.versions.first().ifEmpty(null))
 
     //
     // MODULE: MultiQC
     //
+    
     workflow_summary    = WorkflowExtractmag.paramsSummaryMultiqc(workflow, summary_params)
     ch_workflow_summary = Channel.value(workflow_summary)
 
@@ -93,7 +222,6 @@ workflow EXTRACTMAG {
     ch_multiqc_files = ch_multiqc_files.mix(Channel.from(ch_multiqc_config))
     ch_multiqc_files = ch_multiqc_files.mix(ch_multiqc_custom_config.collect().ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
-    ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
     ch_multiqc_files = ch_multiqc_files.mix(FASTQC.out.zip.collect{it[1]}.ifEmpty([]))
 
     MULTIQC (

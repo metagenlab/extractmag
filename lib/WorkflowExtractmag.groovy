@@ -10,8 +10,8 @@ class WorkflowExtractmag {
     public static void initialise(params, log) {
         genomeExistsError(params, log)
 
-        if (!params.fasta) {
-            log.error "Genome fasta file not specified with e.g. '--fasta genome.fa' or via a detectable config file."
+        if (!params.input) {
+            log.error "Input table file not specified with e.g. '--input sra.tsv' or via a detectable config file."
             System.exit(1)
         }
     }

@@ -3,14 +3,44 @@
     "homePage": "https://github.com/nf-core/extractmag",
     "repos": {
         "nf-core/modules": {
+            "cat/cat": {
+                "git_sha": "eeda4136c096688d04cc40bb3c70d948213ed641"
+            },
+            "checkm/lineagewf": {
+                "git_sha": "e745e167c1020928ef20ea1397b6b4d230681b4d"
+            },
             "custom/dumpsoftwareversions": {
                 "git_sha": "e745e167c1020928ef20ea1397b6b4d230681b4d"
+            },
+            "custom/sratoolsncbisettings": {
+                "git_sha": "b2dbaa99309a2057efc32ef9d029ed91140068df"
+            },
+            "fastp": {
+                "git_sha": "9b51362a532a14665f513cf987531f9ea5046b74"
             },
             "fastqc": {
                 "git_sha": "e745e167c1020928ef20ea1397b6b4d230681b4d"
             },
+            "megahit": {
+                "git_sha": "e745e167c1020928ef20ea1397b6b4d230681b4d"
+            },
+            "minia": {
+                "git_sha": "e745e167c1020928ef20ea1397b6b4d230681b4d"
+            },
             "multiqc": {
                 "git_sha": "e745e167c1020928ef20ea1397b6b4d230681b4d"
+            },
+            "quast": {
+                "git_sha": "e745e167c1020928ef20ea1397b6b4d230681b4d"
+            },
+            "spades": {
+                "git_sha": "e745e167c1020928ef20ea1397b6b4d230681b4d"
+            },
+            "sratools/fasterqdump": {
+                "git_sha": "0cdf7767a79faf424645beeff83ecfa5528b6a7c"
+            },
+            "sratools/prefetch": {
+                "git_sha": "1b228835e9525990db99243cb4f0d07aa6e01bc3"
             }
         }
     }
