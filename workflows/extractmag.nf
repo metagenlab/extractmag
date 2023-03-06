@@ -60,16 +60,15 @@ include { SRA_RUNINFO_TO_FTP           } from '../modules/local/sra_runinfo_to_f
 include { BLOOCOO                      } from '../modules/local/bloocoo'
 include { PIGZ                         } from '../modules/local/compress'
 include { GATBMINIA                    } from '../modules/local/gatb_minia'
-include { CAT as CAT_MEGAHIT           } from '../modules/local/cat_bat'
-include { CAT as CAT_MINIA             } from '../modules/local/cat_bat'
 include { MEGAHIT                      } from '../modules/nf-core/modules/megahit/main'
 include { SPADES                       } from '../modules/nf-core/modules/spades/main'
 include { FATOGFA                      } from '../modules/local/miniatogfa'
 include { MEGAHITFATOFASTG             } from '../modules/local/megahittofastg'
 include { FASTGTOGFA                   } from '../modules/local/bandage_fastg2gfa'
-include { GFA2FA as GFA2FA_MINIA       } from '../modules/local/gfa2fa'
-include { GFA2FA as GFA2FA_MEGAHIT     } from '../modules/local/gfa2fa'
-
+include { TAXONOMY as MINIA_TAXONOMY } from '../subworkflows/local/taxonomy'
+include { TAXONOMY as MEGAHIT_TAXONOMY } from '../subworkflows/local/taxonomy'
+include { TAXONOMY as SPADES_TAXONOMY  } from '../subworkflows/local/taxonomy'
+include { ROCK                         } from '../modules/local/rock'
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     RUN MAIN WORKFLOW
@@ -168,48 +167,44 @@ workflow EXTRACTMAG {
     BLOOCOO(FASTP.out.reads)
     ch_versions = ch_versions.mix(BLOOCOO.out.versions.first().ifEmpty(null))
 
-    PIGZ(BLOOCOO.out.reads)
-    ch_versions = ch_versions.mix(PIGZ.out.versions.first().ifEmpty(null))
-
     /*
      * ASSEMBLY
      * - MINIA
      * - MEGAHIT
      * - SPADES
      */
-    GATBMINIA(PIGZ.out.file_out)
+    GATBMINIA(BLOOCOO.out.reads)
     ch_versions = ch_versions.mix(GATBMINIA.out.versions.first().ifEmpty(null))
 
-    MEGAHIT(PIGZ.out.file_out)
+    MEGAHIT(BLOOCOO.out.reads)
     ch_versions = ch_versions.mix(MEGAHIT.out.versions.first().ifEmpty(null))
 
-    PIGZ.out.file_out.map { meta, reads -> [meta, reads, [], []] }
+    ROCK(BLOOCOO.out.reads)
+    ROCK.out.reads.map { meta, reads -> [meta, reads, [], []] }
         .set { ch_spades }
 
-    // SPADES(ch_spades, [])
+    
+    SPADES(ch_spades, [])
     // ch_versions = ch_versions.mix(SPADES.out.versions.first().ifEmpty(null))
 
     /* convert fasta to gfa */
     FATOGFA(GATBMINIA.out.contigs, GATBMINIA.out.final_k)
     MEGAHITFATOFASTG(MEGAHIT.out.contigs, MEGAHIT.out.k_contigs)
+
     FASTGTOGFA(MEGAHITFATOFASTG.out.fastg)
 
-    /* extract fa from gfa */
-    GFA2FA_MINIA(FATOGFA.out.gfa, "MINIA")
-    GFA2FA_MEGAHIT(FASTGTOGFA.out.gfa, "MEGAHIT")
-
-
-    /*
-     * contig taxnoomy with CAT
-     */
-    CAT_MEGAHIT(GFA2FA_MINIA.out.fasta, params.cat_db, params.cat_tax, "MEGAHIT")
-    CAT_MINIA(GFA2FA_MEGAHIT.out.fasta, params.cat_db, params.cat_tax, "MINIA")
-
+    /* taxo annotation gfa */
     // gtdb taxnonomy
     // root;d__Bacteria;p__Actinobacteriota;c__Actinomycetia;o__Streptomycetales;f__Streptomycetaceae;g__Streptomyces;s__Streptomyces aureoverticillatus
+    MEGAHIT_TAXONOMY(FASTGTOGFA.out.gfa, "MEGAHIT_")
+    MINIA_TAXONOMY(FATOGFA.out.gfa, "MINIA_")
+    SPADES_TAXONOMY(SPADES.out.gfa, "SPADES_")
 
-    // SPADES(BLOOCOO.out.reads,  [])
-    // ch_versions = ch_versions.mix(MEGAHIT.out.versions.first().ifEmpty(null))
+
+    //
+    // MODULE: Extract target genomes based on taxonomy and assembly graph data
+    //
+
 
     //
     // MODULE: MultiQC
@@ -223,6 +218,9 @@ workflow EXTRACTMAG {
     ch_multiqc_files = ch_multiqc_files.mix(ch_multiqc_custom_config.collect().ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
     ch_multiqc_files = ch_multiqc_files.mix(FASTQC.out.zip.collect{it[1]}.ifEmpty([]))
+	ch_multiqc_files = ch_multiqc_files.mix(FASTP.out.json.collect{it[1]}.ifEmpty([]))
+	//ch_multiqc_files = ch_multiqc_files.mix(FASTQC.out.zip.collect{it[1][0]}.ifEmpty([]))
+
 
     MULTIQC (
         ch_multiqc_files.collect()

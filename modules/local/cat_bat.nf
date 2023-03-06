@@ -8,7 +8,6 @@ process CAT {
     tuple val(meta), path(fasta)
     path(dbpath)
     path(taxodb)
-    val(exprefix)
 
     output:
     tuple val(meta), path('*.CAT.contig2classification.txt')      , emit: contig2classification
@@ -30,7 +29,11 @@ process CAT {
     fi
 
     CAT contigs --no_stars -c \$fasta_file -n ${task.cpus} -d ${dbpath} -t ${taxodb}
-    mv out.CAT.contig2classification.txt ${exprefix}${prefix}.CAT.contig2classification.txt
+    mv out.CAT.contig2classification.txt ${prefix}.CAT.contig2classification.txt
+    rm *diamond
+    rm *gff
+    rm *faa 
+    rm *ORF2LCA.txt
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

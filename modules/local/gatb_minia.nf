@@ -44,7 +44,7 @@ process GATBMINIA {
         rm ${prefix}_final.contigs.fa
         cp \$link ${prefix}_final.contigs.fa
 
-        rm -r *.unitigs* *.h5 || true
+        rm -rf *unitigs* *.h5 || true
         rm *list_reads* || true
 
         cat <<-END_VERSIONS > versions.yml
