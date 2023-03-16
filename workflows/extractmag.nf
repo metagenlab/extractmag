@@ -184,7 +184,7 @@ workflow EXTRACTMAG {
         .set { ch_spades }
 
     
-    SPADES(ch_spades, [])
+    // SPADES(ch_spades, [])
     // ch_versions = ch_versions.mix(SPADES.out.versions.first().ifEmpty(null))
 
     /* convert fasta to gfa */
@@ -198,7 +198,7 @@ workflow EXTRACTMAG {
     // root;d__Bacteria;p__Actinobacteriota;c__Actinomycetia;o__Streptomycetales;f__Streptomycetaceae;g__Streptomyces;s__Streptomyces aureoverticillatus
     MEGAHIT_TAXONOMY(FASTGTOGFA.out.gfa, "MEGAHIT_")
     MINIA_TAXONOMY(FATOGFA.out.gfa, "MINIA_")
-    SPADES_TAXONOMY(SPADES.out.gfa, "SPADES_")
+    //SPADES_TAXONOMY(SPADES.out.gfa, "SPADES_")
 
 
     //
