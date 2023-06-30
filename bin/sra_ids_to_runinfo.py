@@ -59,14 +59,12 @@ PREFIX_LIST = sorted(
 # Full list of accepted fields can be obtained here:
 # https://www.ebi.ac.uk/ena/portal/api/returnFields?dataPortal=ena&format=tsv&result=read_run
 ENA_METADATA_FIELDS = (
-    "accession",
     "run_accession",
     "experiment_accession",
     "sample_accession",
     "secondary_sample_accession",
     "study_accession",
     "secondary_study_accession",
-    "parent_study",
     "submission_accession",
     "run_alias",
     "experiment_alias",
@@ -86,7 +84,6 @@ ENA_METADATA_FIELDS = (
     "sample_title",
     "experiment_title",
     "study_title",
-    "description",
     "sample_description",
     "fastq_md5",
     "fastq_bytes",
@@ -94,6 +91,33 @@ ENA_METADATA_FIELDS = (
     "fastq_galaxy",
     "fastq_aspera",
 )
+
+
+# aligned,altitude,assembly_quality,assembly_software,bam_aspera,bam_bytes,bam_ftp,bam_galaxy,bam_md5,base_count,
+# binning_software,bio_material,bisulfite_protocol,broad_scale_environmental_context,broker_name,cage_protocol,
+# cell_line,cell_type,center_name,checklist,chip_ab_provider,chip_protocol,chip_target,collected_by,collection_date,
+# completeness_score,contamination_score,control_experiment,country,cultivar,culture_collection,depth,dev_stage,
+# dnase_protocol,ecotype,elevation,environment_biome,environment_feature,environment_material,environmental_medium,
+# environmental_sample,experiment_accession,experiment_alias,experiment_target,experiment_title,experimental_factor,
+# experimental_protocol,extraction_protocol,faang_library_selection,fastq_aspera,fastq_bytes,fastq_ftp,fastq_galaxy,
+# fastq_md5,file_location,first_created,first_public,germline,hi_c_protocol,host,host_body_site,host_genotype,
+# host_gravidity,host_growth_conditions,host_phenotype,host_sex,host_status,host_tax_id,identified_by,instrument_model,
+# instrument_platform,investigation_type,isolate,isolation_source,last_updated,lat,library_construction_protocol,library_gen_protocol,
+# library_layout,library_max_fragment_size,library_min_fragment_size,library_name,library_pcr_isolation_protocol,
+# library_prep_date,library_prep_date_format,library_prep_latitude,library_prep_location,library_prep_longitude,
+# library_selection,library_source,library_strategy,local_environmental_context,location,location_end,location_start,
+# lon,marine_region,mating_type,ncbi_reporting_standard,nominal_length,nominal_sdev,pcr_isolation_protocol,ph,
+# project,protocol_label,read_count,read_strand,restriction_enzyme,restriction_enzyme_target_sequence,restriction_site,
+# rna_integrity_num,rna_prep_3_protocol,rna_prep_5_protocol,rna_purity_230_ratio,rna_purity_280_ratio,rt_prep_protocol,
+# run_accession,run_alias,run_date,salinity,sample_accession,sample_alias,sample_capture_status,sample_collection,
+# sample_description,sample_material,sample_prep_interval,sample_prep_interval_units,sample_storage,sample_storage_processing,
+# sample_title,sampling_campaign,sampling_platform,sampling_site,scientific_name,secondary_project,secondary_sample_accession,
+# secondary_study_accession,sequencing_date,sequencing_date_format,sequencing_location,sequencing_longitude,sequencing_method,
+# sequencing_primer_catalog,sequencing_primer_lot,sequencing_primer_provider,serotype,serovar,sex,specimen_voucher,sra_aspera,
+# sra_bytes,sra_ftp,sra_galaxy,sra_md5,status,strain,study_accession,study_alias,study_title,sub_species,sub_strain,
+# submission_accession,submission_tool,submitted_aspera,submitted_bytes,submitted_format,submitted_ftp,submitted_galaxy,
+# submitted_host_sex,submitted_md5,submitted_read_type,tag,target_gene,tax_id,taxonomic_classification,taxonomic_identity_marker,
+# temperature,tissue_lib,tissue_type,transposase_protocol,variety
 
 
 class Response:
