@@ -7,12 +7,12 @@ include { PARSE_SSEARCH    } from '../../modules/local/parse_ssearch'
 
 workflow TAXONOMY {
     take:
-    gfa 
+    gfa
     prefix
 
     main:
 
-    GFA2FA(gfa)
+    GFA2FA(gfa) 
 
     CAT(GFA2FA.out.fasta, params.cat_db, params.cat_tax)
 
@@ -20,9 +20,9 @@ workflow TAXONOMY {
     SSEARCH(BARRNAP.out.rrna_16s, params.db_16S)
     PARSE_SSEARCH(SSEARCH.out.ssearch)
 
-
     emit:
-    PARSE_SSEARCH.out.ssearch_tsv 
-    CAT.out.contig2classification
+    rrna_taxonomy = PARSE_SSEARCH.out.ssearch_tsv 
+    contig2classification = CAT.out.contig2classification
+    contigs = GFA2FA.out.fasta
 
 }

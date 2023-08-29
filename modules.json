@@ -5,6 +5,11 @@
         "https://github.com/nf-core/modules.git": {
             "modules": {
                 "nf-core": {
+                    "bwamem2/index": {
+                        "branch": "master",
+                        "git_sha": "911696ea0b62df80e900ef244d7867d177971f73",
+                        "installed_by": ["modules"]
+                    },
                     "cat/cat": {
                         "branch": "master",
                         "git_sha": "5e34754d42cd2d5d248ca8673c0a53cdf5624905",
@@ -23,7 +28,7 @@
                     "custom/sratoolsncbisettings": {
                         "branch": "master",
                         "git_sha": "5e34754d42cd2d5d248ca8673c0a53cdf5624905",
-                        "installed_by": ["modules"]
+                        "installed_by": ["modules", "fastq_download_prefetch_fasterqdump_sratools"]
                     },
                     "fastp": {
                         "branch": "master",
@@ -33,6 +38,11 @@
                     "fastqc": {
                         "branch": "master",
                         "git_sha": "c8e35eb2055c099720a75538d1b8adb3fb5a464c",
+                        "installed_by": ["modules"]
+                    },
+                    "flash": {
+                        "branch": "master",
+                        "git_sha": "911696ea0b62df80e900ef244d7867d177971f73",
                         "installed_by": ["modules"]
                     },
                     "megahit": {
@@ -68,12 +78,21 @@
                     "sratools/fasterqdump": {
                         "branch": "master",
                         "git_sha": "6712754854ae2832abfff3f0800cdb4a6a60bfca",
-                        "installed_by": ["modules"]
+                        "installed_by": ["modules", "fastq_download_prefetch_fasterqdump_sratools"]
                     },
                     "sratools/prefetch": {
                         "branch": "master",
                         "git_sha": "6712754854ae2832abfff3f0800cdb4a6a60bfca",
-                        "installed_by": ["modules"]
+                        "installed_by": ["modules", "fastq_download_prefetch_fasterqdump_sratools"]
+                    }
+                }
+            },
+            "subworkflows": {
+                "nf-core": {
+                    "fastq_download_prefetch_fasterqdump_sratools": {
+                        "branch": "master",
+                        "git_sha": "6712754854ae2832abfff3f0800cdb4a6a60bfca",
+                        "installed_by": ["subworkflows"]
                     }
                 }
             }

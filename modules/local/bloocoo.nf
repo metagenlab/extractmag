@@ -10,7 +10,7 @@ process BLOOCOO {
 
     output:
     tuple val(meta), path('*.corrected.fastq.gz') , optional:true, emit: reads
-    path "versions.yml"                                       , emit: versions
+    path "versions.yml"                                          , emit: versions
 
     script:
     def args = task.ext.args ?: ''

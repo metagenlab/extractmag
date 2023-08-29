@@ -20,11 +20,12 @@ process MEGAHITFATOFASTG {
     script:
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    # SRX018017_SRR038425.contigs.fa.gz
-    k=\$(zcat ${prefix}.contigs.fa.gz | head -n1 | sed 's/_.*//' | sed 's/>k//') || true
+    # SRX018017_SRR038425.contigs.fa
+    k=\$(cat ${prefix}.contigs.fa | head -n1 | sed 's/_.*//' | sed 's/>k//') || true
     echo \$k > k.txt
-    zcat k\$k.contigs.fa.gz > k\$k.contigs.fa
+    zcat k\$k.contigs.fa.gz > k\$k.contigs.fa 
     megahit_core contig2fastg \$k k\$k.contigs.fa > MEGAHIT_${prefix}_k\$k.fastg
+    rm k\$k.contigs.fa
     """
 
 }
