@@ -1,6 +1,5 @@
 
 include { GATBMINIA                    } from '../../modules/local/gatb_minia'
-include { GATBMINIA                    } from '../../modules/local/gatb_minia'
 include { MEGAHIT                      } from '../../modules/nf-core/megahit/main'
 include { SPADES                       } from '../../modules/nf-core/spades/main'
 include { FATOGFA                      } from '../../modules/local/miniatogfa'
@@ -85,12 +84,16 @@ workflow ASSEMBLY {
         taxonomy_contigs = SPADES_TAXONOMY.out.contig2classification
         taxonomy_rrna = SPADES_TAXONOMY.out.rrna_taxonomy
         gfa = SPADES.out.gfa
+        contigs_paths = SPADES.out.contigs_paths
+        contigs_spades = SPADES.out.contigs
      }
     if ( params.assembly == 'megahit' ) {
         MEGAHIT_TAXONOMY.out.contigs.set{contigs}
         taxonomy_contigs = MEGAHIT_TAXONOMY.out.contig2classification
         taxonomy_rrna = MEGAHIT_TAXONOMY.out.rrna_taxonomy
         gfa = FASTGTOGFA.out.gfa
+        contigs_paths = null
+        contigs_spades = null 
       }
     
     if ( params.assembly == 'minia' ) {
@@ -98,6 +101,8 @@ workflow ASSEMBLY {
         taxonomy_contigs = MINIA_TAXONOMY.out.contig2classification
         taxonomy_rrna = MINIA_TAXONOMY.out.rrna_taxonomy
         gfa = FATOGFA.out.gfa
+        contigs_paths = null
+        contigs_spades = null
     }
 
 
@@ -109,6 +114,8 @@ workflow ASSEMBLY {
     taxonomy_contigs 
     taxonomy_rrna
     gfa
+    contigs_paths
+    contigs_spades
     
 
 

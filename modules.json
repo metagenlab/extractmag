@@ -45,6 +45,11 @@
                         "git_sha": "911696ea0b62df80e900ef244d7867d177971f73",
                         "installed_by": ["modules"]
                     },
+                    "gtdbtk/classifywf": {
+                        "branch": "master",
+                        "git_sha": "898259a38563f29c3c5d2490876019ec2d6f49c5",
+                        "installed_by": ["modules"]
+                    },
                     "megahit": {
                         "branch": "master",
                         "git_sha": "5e34754d42cd2d5d248ca8673c0a53cdf5624905",

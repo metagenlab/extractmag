@@ -18,7 +18,10 @@ include { COVERM                       } from '../modules/local/coverm'
 include { CONTIGS_STATS                } from '../modules/local/contigs_stats'
 include { ASSEMBLY                     } from '../subworkflows/local/assembly'
 include { BANDAGE_IMAGE                } from '../modules/local/bandage_image'
+include { CHECKM2                      } from '../modules/local/checkm2'
 include { BANDAGE_IMAGE as BANDAGE_IMAGE_SUBG           } from '../modules/local/bandage_image'
+include { GTDBTK_CLASSIFYWF } from '../modules/nf-core/gtdbtk/classifywf/main'
+
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     RUN MAIN WORKFLOW
@@ -71,19 +74,19 @@ workflow EXTRACTMAG {
     /*
     * READ CORRECTION
     */
-    BLOOCOO(FASTP.out.reads)
-    ch_versions = ch_versions.mix(BLOOCOO.out.versions.first().ifEmpty(null))
+    // BLOOCOO(FASTP.out.reads)
+    //ch_versions = ch_versions.mix(BLOOCOO.out.versions.first().ifEmpty(null))
 
     //
     // MODULE: Extract target genomes based on taxonomy and assembly graph data
     //
-    BLOOCOO.out.reads.view()
+
     // FLASH(BLOOCOO.out.reads)
-    ASSEMBLY(BLOOCOO.out.reads)
+    ASSEMBLY(FASTP.out.reads)
     ch_versions = ch_versions.mix(ASSEMBLY.out.versions.first().ifEmpty(null))
 
 
-    BLOOCOO.out.reads.join(ASSEMBLY.out.contigs).set{reads_and_contigs}
+    FASTP.out.reads.join(ASSEMBLY.out.contigs).set{reads_and_contigs}
 
     reads_and_contigs.view()
 
@@ -92,15 +95,31 @@ workflow EXTRACTMAG {
     QUAST(ASSEMBLY.out.contigs)
     
     // contigs stats 
-    ASSEMBLY.out.contigs.join(ASSEMBLY.out.gfa).join(ASSEMBLY.out.taxonomy_contigs).join(COVERM.out.tsv).set{contigs_data}
-    contigs_data.view()
+
+    ASSEMBLY.out.contigs.join(ASSEMBLY.out.gfa).join(ASSEMBLY.out.taxonomy_contigs).join(COVERM.out.tsv).join(ASSEMBLY.out.contigs_paths).join(ASSEMBLY.out.contigs_spades)
+    .multiMap{meta, contigs, gfa, taxo_contigs, coverm, paths, contigs_spades ->
+    ch1: [meta, contigs, gfa, taxo_contigs, coverm]
+    ch2: paths
+    ch3: contigs_spades}.set{contigs_data}
+
     CONTIGS_STATS(contigs_data)
     CONTIGS_STATS.out.gfa.join(CONTIGS_STATS.out.target_cols).set{bandage_in}
-    // BANDAGE_IMAGE(bandage_in)
+    
+    // plot assembly (sub)graph of target taxon only
+    BANDAGE_IMAGE_SUBG(bandage_in)
+    // ASSEMBLY.out.gfa.join(CONTIGS_STATS.out.subgraphs_cols).set{bandage_in2}
+    // BANDAGE_IMAGE(bandage_in2)
 
-    ASSEMBLY.out.gfa.join(CONTIGS_STATS.out.subgraphs_cols).set{bandage_in2}
-    // BANDAGE_IMAGE_SUBG(bandage_in2)
+    GTDBTK_CLASSIFYWF(CONTIGS_STATS.out.target_fasta, tuple("r214", params.gtdb), params.gtdb_mash)
 
+    CHECKM2(CONTIGS_STATS.out.target_fasta)
+
+    // plot GC vs Cov 
+    // full graph
+
+    // subset graph
+    
+    
     //
     // MODULE: MultiQC
     //
