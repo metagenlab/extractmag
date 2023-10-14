@@ -5,7 +5,7 @@ include { SRA_RUNINFO_TO_FTP           } from '../../modules/local/sra_runinfo_t
 include { CUSTOM_SRATOOLSNCBISETTINGS  } from '../../modules/nf-core/custom/sratoolsncbisettings/main'
 include { SRATOOLS_PREFETCH            } from '../../modules/nf-core/sratools/prefetch/main'
 include { SRATOOLS_FASTERQDUMP         } from '../../modules/nf-core/sratools/fasterqdump/main'
-
+include { clean_work_dirs as clean_sra } from '../../modules/local/clean_work.nf'
 
 workflow DOWNLOAD_SRA {
     
@@ -15,9 +15,7 @@ workflow DOWNLOAD_SRA {
     main:
 
     ch_versions = Channel.empty()
-    println("downloading sra")
-    sra_ids
-    .collect().view()
+
 
     //
     // MODULE: Get SRA run information for public database ids
@@ -62,13 +60,27 @@ workflow DOWNLOAD_SRA {
     // Download reads
     //
 
-    SRATOOLS_PREFETCH ( ch_sra_reads, settings )
+    // SRATOOLS_PREFETCH ( ch_sra_reads, settings )
     ch_versions = ch_versions.mix( SRATOOLS_PREFETCH.out.versions.first())
 
-    SRATOOLS_FASTERQDUMP ( SRATOOLS_PREFETCH.out.sra, settings )
+    // SRATOOLS_FASTERQDUMP ( SRATOOLS_PREFETCH.out.sra, settings )
     ch_versions = ch_versions.mix( SRATOOLS_FASTERQDUMP.out.versions.first() )
+
+    // SRATOOLS_PREFETCH.out.sra.join(SRATOOLS_FASTERQDUMP.out.reads).set{sra_to_clean}
+    // SRATOOLS_PREFETCH.out.sra.view()
+    // SRATOOLS_FASTERQDUMP.out.reads.view()
+    //sra_to_clean.view()
+
+    if( params.delete_intermediates ) {                                                               
+        clean_sra(sra_to_clean) 
+        clean =  clean_sra.out                                                                        
+    }
+    else {
+        clean =  null  
+    }
+
     
     emit:
     reads = SRATOOLS_FASTERQDUMP.out.reads
-
+    clean = clean
 } 

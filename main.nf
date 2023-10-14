@@ -76,7 +76,7 @@ Channel
     .map { it.accession }
     .set { ch_sra }
 
-ch_sra.view()
+// ch_sra.view()
 
 // Read in ids from --input file
 Channel
@@ -95,8 +95,8 @@ Channel
     .map { create_sample_channel(it) }
     .set { ch_samples_filtering }
 
-ch_samples_no_filtering.view()
-ch_samples_filtering.view()
+// ch_samples_no_filtering.view()
+// ch_samples_filtering.view()
 
 /*
 Channel
@@ -156,6 +156,7 @@ def map_join(channel_a, channel_b, key){
 //
 workflow NFCORE_EXTRACTMAG {
 
+    println(params.delete_intermediates)
 
     // NO FILTERING
     DUMP_NO_FILT(
@@ -198,7 +199,7 @@ workflow NFCORE_EXTRACTMAG {
 
     // combine sra and local channels
     // DOWNLOAD_SRA.out.reads.view()
-    FILTER_READS.out.reads.view()
+    // FILTER_READS.out.reads.view()
     // run main workflow with all samples
     EXTRACTMAG (FILTER_READS.out.reads.mix(DUMP_NO_FILT.out.reads))
 }

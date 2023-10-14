@@ -29,9 +29,6 @@ workflow ASSEMBLY {
 
     ch_versions = Channel.empty()
 
-    reads.view()
-    println(params.assembly)
-
     if ( params.assembly == 'spades' ) {
 
         // motus taxnonomy profile

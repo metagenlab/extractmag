@@ -51,6 +51,7 @@ workflow EXTRACTMAG {
 
     ch_versions = Channel.empty()
 
+    
 
     //
     // FastQC raw reads
@@ -87,8 +88,6 @@ workflow EXTRACTMAG {
 
 
     FASTP.out.reads.join(ASSEMBLY.out.contigs).set{reads_and_contigs}
-
-    reads_and_contigs.view()
 
     // get depth stats
     COVERM(reads_and_contigs)
