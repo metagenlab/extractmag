@@ -1,7 +1,7 @@
 include { CUSTOM_SRATOOLSNCBISETTINGS } from '../../../modules/nf-core/custom/sratoolsncbisettings/main'
 include { SRATOOLS_PREFETCH           } from '../../../modules/nf-core/sratools/prefetch/main'
 include { SRATOOLS_FASTERQDUMP        } from '../../../modules/nf-core/sratools/fasterqdump/main'
-include { clean_work_dirs as CLEAN_SRA } from '../../../modules/local/clean_work.nf'
+include { clean_work_dirs as CLEAN_SRA_DIR } from '../../../modules/local/clean_work.nf'
 
 //
 // Download FASTQ sequencing reads from the NCBI's Sequence Read Archive (SRA).
@@ -34,14 +34,13 @@ workflow FASTQ_DOWNLOAD_PREFETCH_FASTERQDUMP_SRATOOLS {
     SRATOOLS_FASTERQDUMP ( SRATOOLS_PREFETCH.out.sra, ch_ncbi_settings, ch_dbgap_key )
     ch_versions = ch_versions.mix(SRATOOLS_FASTERQDUMP.out.versions.first())
 
-    SRATOOLS_PREFETCH.out.sra.join(SRATOOLS_FASTERQDUMP.out.reads).map{it[0]}.set{sra_to_clean}
+    SRATOOLS_PREFETCH.out.sra.join(SRATOOLS_FASTERQDUMP.out.reads).map{it[1]}.set{sra_to_clean}
 
     sra_to_clean.view()
 
     if( params.delete_intermediates ) {                                                               
-        CLEAN_SRA(sra_to_clean)                                                                       
+        CLEAN_SRA_DIR(sra_to_clean)                                                                       
     }
-
 
     emit:
     reads    = SRATOOLS_FASTERQDUMP.out.reads // channel: [ val(meta), [ reads ] ]
